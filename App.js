@@ -6,89 +6,99 @@
  * @flow strict-local
  */
 
-import React from 'react';
-import type {Node} from 'react';
+import React, {useState, useEffect} from 'react';
+import { openDatabase } from 'react-native-sqlite-storage';
 import {
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
+  Button,
   Text,
   useColorScheme,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import Camera from './Camera'
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const errorCB = (err)=>  {
+  console.log(err);
+}
 
-const Section = ({children, title}): Node => {
-  const isDarkMode = useColorScheme() === 'dark';
+
+const openCB = () => {
+  console.log("Database OPENED");
+}
+
+const db = openDatabase({
+  name: 'SQLite',
+  location: 'default',
+  createFromLocation: '~data.db',
+},  openCB, errorCB);
+
+
+const App = () => {
+  useEffect(() => {
+    
+  }, []);
+
+  //states
+  const [showCam, setShowCam] = useState(true);
+  const [scannedBeneficiary, setScannedBeneficiary] = useState({});
+
+
+  //actions
+  const getBeneficiaryData = (hhid) => {
+    db.transaction((trans) => {
+      trans.executeSql("select * from beneficiaries where hhid = ?", [hhid], (trans, results) => {
+        let items = [];
+        let rows = results.rows;
+        for (let i = 0; i < rows.length; i++) {
+          var item = rows.item(i);
+          items.push(item);
+        }
+        console.log(items[0]);
+        setScannedBeneficiary(items[0])
+        setShowCam(!showCam)
+        // setProvinces(items);
+      },
+      (error) => {
+        console.log(error);
+      });
+    });
+  }
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
+    <View style={{flex: 1, padding: 10}}>
+      <View style={{ padding: 20, flex: 1, flexDirection: "row", alignItems: 'center' }}>
+        <View style={{flex: 1, alignItems: "center" }}>
+          
+          { showCam ? <Camera getBeneficiaryData={getBeneficiaryData} /> : <></> }
+
+        <TouchableOpacity
+          style={{backgroundColor: "#3498db",padding: 10}}
+          onPress={() => {setShowCam(!showCam)}}
+        >
+          <Text style={{color: "#ecf0f1"}}>Turn { showCam ? "off" : "on" } Camera</Text>
+        </TouchableOpacity>
+        </View>
+      </View>
+      <View style={{flex: 1}}>
+        <Text><Text style={{fontWeight: "bold"}}>Last Name:</Text> {scannedBeneficiary.last_name}</Text>
+        <Text><Text style={{fontWeight: "bold"}}>First Name:</Text> {scannedBeneficiary.first_name}</Text>
+        <Text><Text style={{fontWeight: "bold"}}>Middle Name:</Text> {scannedBeneficiary.middle_name}</Text>
+        <Text><Text style={{fontWeight: "bold"}}>Birth Date:</Text> {scannedBeneficiary.birthday}</Text>
+        <Text><Text style={{fontWeight: "bold"}}>Mothers Name:</Text> {scannedBeneficiary.last_name}</Text>
+        <Text><Text style={{fontWeight: "bold"}}>Mobile Number:</Text> {scannedBeneficiary.mobile}</Text>
+        <Text><Text style={{fontWeight: "bold"}}>Province:</Text> {scannedBeneficiary.province}</Text>
+        <Text><Text style={{fontWeight: "bold"}}>City:</Text> {scannedBeneficiary.city}</Text>
+        <Text><Text style={{fontWeight: "bold"}}>Barangay:</Text> {scannedBeneficiary.barangay}</Text>
+        <Text><Text style={{fontWeight: "bold"}}>Branch:</Text> {scannedBeneficiary.branch_name}</Text>
+        <Text><Text style={{fontWeight: "bold"}}>Card Number:</Text> {scannedBeneficiary.card_number}</Text>
+        <Text><Text style={{fontWeight: "bold"}}>SA Number:</Text> {scannedBeneficiary.sa_account}</Text>
+      </View>
     </View>
   );
-};
-
-const App: () => Node = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
+}
 
 const styles = StyleSheet.create({
   sectionContainer: {
